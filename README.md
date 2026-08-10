@@ -2,6 +2,10 @@
 
 Ein schnelles Airhockey-Spiel für das iPad, vollständig in einer einzigen `index.html` umgesetzt. Es funktioniert offline und benötigt weder Konto noch Server oder externe Bibliotheken.
 
+## 🎮 Direkt spielen
+
+[Airhockey im Browser starten](https://jejepage.github.io/airhockey-game/)
+
 ## Funktionen
 
 - Einzelspieler mit den Schwierigkeitsgraden Einfach, Normal und Schwer
