@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#07121d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Airhockey</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f4fbff;
+      --muted: #91a7b8;
+      --cyan: #27e9ff;
+      --cyan-dark: #087f96;
+      --coral: #ff526f;
+      --coral-dark: #a51f45;
+      --lime: #c9ff4d;
+      --panel: rgba(7, 20, 32, .92);
+      --line: rgba(164, 225, 241, .18);
+      font-family: Inter, ui-rounded, "SF Pro Rounded", "Avenir Next", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      width: 100%; height: 100%; margin: 0; overflow: hidden;
+      overscroll-behavior: none; touch-action: none; background: #030912; color: var(--ink);
+    }
+
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(39,233,255,.12), transparent 31%),
+        radial-gradient(circle at 82% 76%, rgba(255,82,111,.12), transparent 31%),
+        linear-gradient(135deg, #02070d, #0a1723 48%, #030912);
+    }
+
+    button, select { font: inherit; }
+    button { border: 0; color: inherit; cursor: pointer; }
+    button:focus-visible, select:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+    .hidden { display: none !important; }
+
+    .app { position: relative; width: 100%; height: 100%; }
+    .screen { position: absolute; inset: 0; }
+
+    #home {
+      display: grid; grid-template-columns: minmax(280px, .86fr) minmax(420px, 1.14fr);
+      align-items: center; gap: clamp(28px, 6vw, 90px);
+      padding: max(30px, env(safe-area-inset-top)) max(36px, env(safe-area-inset-right))
+               max(30px, env(safe-area-inset-bottom)) max(36px, env(safe-area-inset-left));
+      max-width: 1280px; margin: auto;
+    }
+
+    .eyebrow { color: var(--cyan); font-size: 13px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { margin: 9px 0 12px; font-size: clamp(64px, 9vw, 124px); line-height: .82; letter-spacing: -.075em; text-transform: uppercase; }
+    .title-air { display: block; color: transparent; -webkit-text-stroke: 2px rgba(244,251,255,.8); }
+    .title-hockey { display: block; color: var(--ink); text-shadow: 0 0 34px rgba(39,233,255,.24); }
+    .lede { max-width: 430px; color: var(--muted); font-size: clamp(15px, 1.6vw, 19px); line-height: 1.55; }
+    .hint { display: flex; gap: 10px; align-items: center; margin-top: 25px; color: #b9cad5; font-size: 13px; font-weight: 700; }
+    .finger { display: grid; place-items: center; width: 33px; height: 33px; border: 1px solid rgba(39,233,255,.3); border-radius: 50%; color: var(--cyan); }
+
+    .menu-card {
+      position: relative; padding: clamp(22px, 3.2vw, 38px); border: 1px solid rgba(255,255,255,.1); border-radius: 28px;
+      background: linear-gradient(145deg, rgba(18,43,61,.82), rgba(5,16,27,.9));
+      box-shadow: 0 30px 80px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06); overflow: hidden;
+    }
+    .menu-card::before { content:""; position:absolute; width:180px; height:180px; right:-70px; top:-90px; border: 34px solid rgba(39,233,255,.05); border-radius:50%; }
+    .menu-label { margin: 0 0 13px; color: var(--muted); font-size: 12px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mode-btn {
+      position: relative; min-height: 118px; padding: 19px; border-radius: 20px; text-align: left;
+      background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.09); transition: transform .16s, background .16s;
+    }
+    .mode-btn:active { transform: scale(.975); }
+    .mode-btn.selected { background: rgba(39,233,255,.105); border-color: rgba(39,233,255,.55); box-shadow: inset 0 0 35px rgba(39,233,255,.05); }
+    .mode-btn:nth-child(2).selected { background: rgba(255,82,111,.1); border-color: rgba(255,82,111,.55); }
+    .mode-icon { display: block; margin-bottom: 20px; color: var(--cyan); font-size: 24px; font-weight: 800; }
+    .mode-btn:nth-child(2) .mode-icon { color: var(--coral); }
+    .mode-name { display: block; font-size: clamp(17px, 2vw, 22px); font-weight: 900; }
+    .mode-sub { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .difficulty-row { margin-top: 19px; }
+    .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 5px; border-radius: 15px; background: rgba(0,0,0,.28); }
+    .diff-btn { min-height: 43px; border-radius: 11px; color: var(--muted); background: transparent; font-size: 13px; font-weight: 850; }
+    .diff-btn.selected { color: #061116; background: var(--lime); box-shadow: 0 5px 18px rgba(201,255,77,.2); }
+    .start-btn { width: 100%; min-height: 64px; margin-top: 22px; border-radius: 16px; color: #041015; background: var(--cyan); font-size: 18px; font-weight: 950; letter-spacing: .03em; box-shadow: 0 13px 30px rgba(39,233,255,.2); }
+    .start-btn:active { transform: translateY(1px); }
+    .secondary-btn { width: 100%; min-height: 48px; margin-top: 10px; border-radius: 14px; background: transparent; color: #a8bdca; font-size: 14px; font-weight: 750; }
+
+    #game { background: #030911; }
+    #rink { display: block; width: 100%; height: 100%; touch-action: none; }
+    .game-hud { position: absolute; inset: 0; pointer-events: none; }
+    .scoreboard { position: absolute; left: 50%; top: max(13px, env(safe-area-inset-top)); transform: translateX(-50%); display:flex; align-items:center; gap:12px; padding:7px 13px; border:1px solid rgba(255,255,255,.09); border-radius:18px; background:rgba(2,9,16,.76); backdrop-filter: blur(12px); box-shadow:0 10px 24px rgba(0,0,0,.25); }
+    .score { min-width: 41px; text-align:center; font-size:clamp(25px,4vw,39px); line-height:1; font-weight:950; font-variant-numeric:tabular-nums; }
+    .score.left { color: var(--cyan); } .score.right { color: var(--coral); }
+    .score-mid { display:grid; gap:2px; min-width:70px; text-align:center; }
+    .score-mode { color:#d6e5ed; font-size:10px; font-weight:900; letter-spacing:.13em; text-transform:uppercase; }
+    .timer { color:var(--muted); font-size:11px; font-weight:750; font-variant-numeric:tabular-nums; }
+    .hud-btn { pointer-events:auto; position:absolute; top:max(17px, env(safe-area-inset-top)); min-width:48px; height:48px; border-radius:15px; border:1px solid rgba(255,255,255,.1); background:rgba(5,16,26,.78); backdrop-filter:blur(12px); font-size:18px; font-weight:900; }
+    #pauseButton { right:max(18px, env(safe-area-inset-right)); }
+    #homeButton { left:max(18px, env(safe-area-inset-left)); font-size:16px; }
+
+    .toast { position:absolute; left:50%; top:50%; translate:-50% -50%; padding:16px 27px; border-radius:18px; background:rgba(4,13,21,.82); border:1px solid rgba(255,255,255,.13); box-shadow:0 22px 70px rgba(0,0,0,.45); text-align:center; opacity:0; transform:scale(.85); transition:.22s ease; pointer-events:none; }
+    .toast.show { opacity:1; transform:scale(1); }
+    .toast strong { display:block; color:var(--lime); font-size:clamp(28px,5vw,54px); text-transform:uppercase; font-style:italic; }
+    .toast span { display:block; margin-top:4px; color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+
+    .overlay { position:absolute; inset:0; display:grid; place-items:center; padding:28px; background:rgba(1,6,11,.68); backdrop-filter:blur(14px); }
+    .dialog { width:min(480px,100%); padding:30px; border:1px solid rgba(255,255,255,.12); border-radius:26px; background:var(--panel); box-shadow:0 30px 90px rgba(0,0,0,.5); text-align:center; }
+    .dialog-kicker { color:var(--cyan); font-size:11px; font-weight:900; letter-spacing:.18em; text-transform:uppercase; }
+    .dialog h2 { margin:8px 0 7px; font-size:clamp(35px,7vw,60px); line-height:1; letter-spacing:-.05em; }
+    .dialog p { margin:0 0 23px; color:var(--muted); line-height:1.5; }
+    .dialog-actions { display:grid; gap:10px; }
+    .dialog-actions button { min-height:55px; border-radius:15px; background:rgba(255,255,255,.075); font-weight:850; }
+    .dialog-actions .primary { color:#041015; background:var(--cyan); }
+
+    #leaderboard { display:grid; place-items:center; padding:24px; background:rgba(2,8,14,.72); backdrop-filter:blur(16px); }
+    .leader-card { width:min(680px,100%); max-height:90vh; overflow:auto; padding:clamp(24px,4vw,42px); border:1px solid rgba(255,255,255,.11); border-radius:28px; background:var(--panel); box-shadow:0 30px 90px rgba(0,0,0,.5); }
+    .leader-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:22px; }
+    .leader-head h2 { margin:3px 0 0; font-size:clamp(32px,5vw,48px); letter-spacing:-.04em; }
+    .close-btn { flex:0 0 auto; width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,.07); font-size:20px; }
+    .stat-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:18px; }
+    .stat { padding:14px 10px; border-radius:15px; background:rgba(255,255,255,.045); text-align:center; }
+    .stat strong { display:block; color:var(--lime); font-size:22px; }
+    .stat span { color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+    .history { display:grid; gap:8px; }
+    .history-empty { padding:32px; border:1px dashed rgba(255,255,255,.12); border-radius:16px; color:var(--muted); text-align:center; }
+    .history-row { display:grid; grid-template-columns:1fr auto auto; gap:16px; align-items:center; padding:14px 16px; border-radius:15px; background:rgba(255,255,255,.045); }
+    .history-row strong { font-size:14px; } .history-row small { display:block; margin-top:2px; color:var(--muted); font-size:11px; }
+    .result-win { color:var(--lime); font-weight:900; } .result-loss { color:var(--coral); font-weight:900; }
+    .history-score { font-size:20px; font-weight:950; font-variant-numeric:tabular-nums; }
+
+    .rotate-notice { display:none; position:fixed; inset:0; z-index:99; place-items:center; padding:35px; background:#06101a; text-align:center; }
+    .rotate-notice div { max-width:320px; }
+    .rotate-icon { display:block; margin:auto auto 20px; width:70px; height:48px; border:3px solid var(--cyan); border-radius:9px; transform:rotate(-12deg); box-shadow:0 0 24px rgba(39,233,255,.2); }
+    .rotate-notice strong { display:block; margin-bottom:7px; font-size:25px; }
+    .rotate-notice span { color:var(--muted); line-height:1.5; }
+
+    @media (orientation: portrait) and (max-width: 900px) { .rotate-notice { display:grid; } }
+    @media (max-width: 800px), (max-height: 560px) {
+      #home { grid-template-columns:.75fr 1.25fr; gap:24px; padding:20px max(24px,env(safe-area-inset-right)) 20px max(24px,env(safe-area-inset-left)); }
+      h1 { font-size:clamp(48px,9vw,74px); }
+      .lede { font-size:14px; } .hint { margin-top:15px; }
+      .menu-card { padding:18px; border-radius:22px; }
+      .mode-btn { min-height:92px; padding:14px; } .mode-icon { margin-bottom:10px; }
+      .difficulty-row { margin-top:12px; } .start-btn { min-height:52px; margin-top:14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <section id="home" class="screen">
+      <div>
+        <div class="eyebrow">Schnell · Lokal · Zu zweit</div>
+        <h1><span class="title-air">Air</span><span class="title-hockey">Hockey</span></h1>
+        <p class="lede">Sieben Tore bis zum Sieg. Zieh deinen Schläger direkt mit dem Finger – schnell, präzise und ohne Schnickschnack.</p>
+        <div class="hint"><span class="finger">↗</span><span>Am besten im Querformat spielen</span></div>
+      </div>
+      <div class="menu-card">
+        <p class="menu-label">Spielmodus</p>
+        <div class="mode-grid" role="group" aria-label="Spielmodus wählen">
+          <button class="mode-btn selected" data-mode="single" aria-pressed="true">
+            <span class="mode-icon">01</span><span class="mode-name">Einzelspieler</span><span class="mode-sub">Du gegen den Computer</span>
+          </button>
+          <button class="mode-btn" data-mode="multi" aria-pressed="false">
+            <span class="mode-icon">02</span><span class="mode-name">Zwei Spieler</span><span class="mode-sub">Ein iPad, zwei Seiten</span>
+          </button>
+        </div>
+        <div class="difficulty-row" id="difficultyWrap">
+          <p class="menu-label">Computerstärke</p>
+          <div class="segmented" role="group" aria-label="Computerstärke wählen">
+            <button class="diff-btn" data-difficulty="easy">Einfach</button>
+            <button class="diff-btn selected" data-difficulty="normal">Normal</button>
+            <button class="diff-btn" data-difficulty="hard">Schwer</button>
+          </div>
+        </div>
+        <button class="start-btn" id="startButton">Spiel starten&nbsp; →</button>
+        <button class="secondary-btn" id="leaderButton">Bestenliste &amp; letzte Spiele</button>
+      </div>
+    </section>
+
+    <section id="game" class="screen hidden" aria-label="Airhockey-Spielfeld">
+      <canvas id="rink"></canvas>
+      <div class="game-hud">
+        <button class="hud-btn" id="homeButton" aria-label="Zum Startbildschirm">⌂</button>
+        <div class="scoreboard">
+          <span class="score left" id="scoreLeft">0</span>
+          <span class="score-mid"><span class="score-mode" id="modeLabel">VS CPU</span><span class="timer" id="timer">00:00</span></span>
+          <span class="score right" id="scoreRight">0</span>
+        </div>
+        <button class="hud-btn" id="pauseButton" aria-label="Spiel pausieren">Ⅱ</button>
+        <div class="toast" id="toast"><strong>Tor!</strong><span>Weiter geht’s</span></div>
+      </div>
+
+      <div class="overlay hidden" id="pauseOverlay">
+        <div class="dialog">
+          <span class="dialog-kicker">Auszeit</span><h2>Pause</h2><p>Die Scheibe wartet auf dich.</p>
+          <div class="dialog-actions"><button class="primary" id="resumeButton">Fortsetzen</button><button id="restartPauseButton">Neues Spiel</button><button class="to-menu">Spielmodus wechseln</button></div>
+        </div>
+      </div>
+      <div class="overlay hidden" id="finishOverlay">
+        <div class="dialog">
+          <span class="dialog-kicker">Spiel beendet</span><h2 id="winnerTitle">Sieg!</h2><p id="finalScore">Endstand 7 : 4</p>
+          <div class="dialog-actions"><button class="primary" id="playAgainButton">Noch einmal</button><button class="to-menu">Zurück zum Start</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="leaderboard" class="screen hidden" aria-label="Bestenliste">
+      <div class="leader-card">
+        <div class="leader-head"><div><span class="eyebrow">Deine Bilanz</span><h2>Bestenliste</h2></div><button class="close-btn" id="closeLeader" aria-label="Bestenliste schließen">×</button></div>
+        <div class="stat-strip"><div class="stat"><strong id="statWins">0</strong><span>Siege</span></div><div class="stat"><strong id="statGames">0</strong><span>Spiele</span></div><div class="stat"><strong id="statBest">–</strong><span>Bester Sieg</span></div></div>
+        <p class="menu-label">Letzte Spiele</p><div class="history" id="history"></div>
+      </div>
+    </section>
+  </main>
+  <div class="rotate-notice"><div><i class="rotate-icon"></i><strong>iPad bitte drehen</strong><span>Airhockey spielt sich im Querformat am besten.</span></div></div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+    const STORAGE_KEY = 'airhockey-v1';
+    const home = $('#home'), gameScreen = $('#game'), leaderboard = $('#leaderboard');
+    const canvas = $('#rink'), ctx = canvas.getContext('2d', { alpha: false });
+    const scoreLeft = $('#scoreLeft'), scoreRight = $('#scoreRight'), timer = $('#timer'), modeLabel = $('#modeLabel');
+    const pauseOverlay = $('#pauseOverlay'), finishOverlay = $('#finishOverlay'), toast = $('#toast');
+
+    let prefs = loadPrefs();
+    let mode = prefs.mode || 'single';
+    let difficulty = prefs.difficulty || 'normal';
+    let state = 'home';
+    let W = 0, H = 0, dpr = 1, scale = 1, lastTime = 0, elapsed = 0, goalTimer = 0, countdown = 0;
+    let animationId = 0;
+    const score = [0, 0];
+    const pointers = new Map();
+    const paddle = [
+      { x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, r: 42, color: '#27e9ff' },
+      { x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, r: 42, color: '#ff526f' }
+    ];
+    const puck = { x: 0, y: 0, vx: 0, vy: 0, r: 20 };
+    const diff = {
+      easy: { speed: .46, reaction: .052, error: 68 },
+      normal: { speed: .62, reaction: .075, error: 35 },
+      hard: { speed: .82, reaction: .105, error: 10 }
+    };
+
+    function loadPrefs() {
+      try { return { mode:'single', difficulty:'normal', history:[], ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') }; }
+      catch (_) { return { mode:'single', difficulty:'normal', history:[] }; }
+    }
+    function savePrefs() {
+      prefs.mode = mode; prefs.difficulty = difficulty;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch (_) {}
+    }
+
+    function setMode(next) {
+      mode = next;
+      $$('.mode-btn').forEach(b => { const on = b.dataset.mode === mode; b.classList.toggle('selected', on); b.setAttribute('aria-pressed', on); });
+      $('#difficultyWrap').classList.toggle('hidden', mode !== 'single'); savePrefs();
+    }
+    function setDifficulty(next) {
+      difficulty = next; $$('.diff-btn').forEach(b => b.classList.toggle('selected', b.dataset.difficulty === difficulty)); savePrefs();
+    }
+
+    function showOnly(which) {
+      [home, gameScreen, leaderboard].forEach(el => el.classList.toggle('hidden', el !== which));
+    }
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      W = Math.max(1, rect.width); H = Math.max(1, rect.height); dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
+      scale = Math.min(W / 1194, H / 744);
+      paddle.forEach(p => p.r = Math.max(28, 44 * scale)); puck.r = Math.max(15, 20 * scale);
+      if (state !== 'playing' && state !== 'goal') resetPositions(false);
+    }
+
+    function resetPositions(serve = true) {
+      paddle[0].x = W * .2; paddle[0].y = H * .5;
+      paddle[1].x = W * .8; paddle[1].y = H * .5;
+      paddle.forEach(p => { p.px=p.x; p.py=p.y; p.vx=0; p.vy=0; });
+      puck.x = W * .5; puck.y = H * .5; puck.vx = 0; puck.vy = 0;
+      if (serve) countdown = .68;
+    }
+
+    function startGame() {
+      showOnly(gameScreen); pauseOverlay.classList.add('hidden'); finishOverlay.classList.add('hidden'); toast.classList.remove('show');
+      score[0] = score[1] = 0; elapsed = 0; goalTimer = 0; pointers.clear(); updateHud(); resize(); resetPositions(true);
+      modeLabel.textContent = mode === 'single' ? `VS CPU · ${difficulty === 'easy' ? 'LEICHT' : difficulty === 'hard' ? 'SCHWER' : 'NORMAL'}` : '2 SPIELER';
+      state = 'playing'; lastTime = performance.now(); cancelAnimationFrame(animationId); animationId = requestAnimationFrame(loop); savePrefs();
+    }
+
+    function updateHud() {
+      scoreLeft.textContent = score[0]; scoreRight.textContent = score[1];
+      const sec = Math.floor(elapsed); timer.textContent = `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+    }
+
+    function pause(auto = false) {
+      if (state !== 'playing' && state !== 'goal') return;
+      state = 'paused'; pointers.clear(); pauseOverlay.classList.remove('hidden');
+      if (auto) pauseOverlay.querySelector('p').textContent = 'Das Spiel wurde automatisch angehalten.';
+    }
+    function resume() {
+      if (state !== 'paused') return;
+      pauseOverlay.classList.add('hidden'); pauseOverlay.querySelector('p').textContent = 'Die Scheibe wartet auf dich.';
+      state = 'playing'; lastTime = performance.now();
+    }
+    function backHome() {
+      state = 'home'; pointers.clear(); cancelAnimationFrame(animationId); pauseOverlay.classList.add('hidden'); finishOverlay.classList.add('hidden'); showOnly(home);
+    }
+
+    function goal(scorer) {
+      if (state !== 'playing') return;
+      score[scorer]++; updateHud(); state = 'goal'; goalTimer = 1.15; puck.vx = puck.vy = 0;
+      toast.querySelector('strong').textContent = 'Tor!'; toast.querySelector('strong').style.color = scorer === 0 ? '#27e9ff' : '#ff526f';
+      toast.querySelector('span').textContent = scorer === 0 ? 'Punkt für Spieler 1' : (mode === 'single' ? 'Punkt für den Computer' : 'Punkt für Spieler 2'); toast.classList.add('show');
+      pulse([45, 30, 45]);
+      if (score[scorer] >= 7) goalTimer = .9;
+    }
+
+    function finishGame() {
+      state = 'finished'; toast.classList.remove('show');
+      const playerWon = score[0] > score[1];
+      $('#winnerTitle').textContent = mode === 'single' ? (playerWon ? 'Du gewinnst!' : 'Computer gewinnt') : (playerWon ? 'Spieler 1 gewinnt!' : 'Spieler 2 gewinnt!');
+      $('#winnerTitle').style.color = playerWon ? '#27e9ff' : '#ff526f';
+      $('#finalScore').textContent = `Endstand ${score[0]} : ${score[1]} · ${formatTime(elapsed)}`;
+      finishOverlay.classList.remove('hidden');
+      prefs.history = [{ date: new Date().toISOString(), left:score[0], right:score[1], mode, difficulty, duration:Math.floor(elapsed), win:playerWon }, ...(prefs.history || [])].slice(0,12);
+      savePrefs(); pulse([80,45,80,45,120]);
+    }
+
+    function pulse(pattern) { try { navigator.vibrate?.(pattern); } catch (_) {} }
+    function formatTime(s) { return `${Math.floor(s/60)}:${String(Math.floor(s)%60).padStart(2,'0')}`; }
+
+    function movePaddle(i, x, y, dt) {
+      const p = paddle[i], pad = Math.max(18, 23*scale), midGap = Math.max(7, 9*scale);
+      const minX = pad + p.r, maxX = i === 0 ? W/2 - midGap - p.r : W - pad - p.r;
+      const sideMin = i === 0 ? pad + p.r : W/2 + midGap + p.r;
+      const nx = Math.max(sideMin, Math.min(maxX, x)), ny = Math.max(pad+p.r, Math.min(H-pad-p.r, y));
+      p.px = p.x; p.py = p.y; p.x = nx; p.y = ny;
+      const safeDt = Math.max(dt, 1/120); p.vx = (p.x-p.px)/safeDt; p.vy = (p.y-p.py)/safeDt;
+    }
+
+    function updateAI(dt) {
+      const p = paddle[1], cfg = diff[difficulty];
+      let tx = W*.79, ty = H*.5;
+      if (puck.x > W*.34 || puck.vx > 0) {
+        tx = Math.max(W*.61, Math.min(W*.88, puck.x + 35*scale));
+        const wobble = Math.sin(elapsed*2.1) * cfg.error * scale; ty = puck.y + wobble;
+      }
+      const maxStep = Math.max(2.8, 830*scale*cfg.speed*dt);
+      const dx=tx-p.x, dy=ty-p.y, len=Math.hypot(dx,dy) || 1, ease=Math.min(1,cfg.reaction*60);
+      movePaddle(1, p.x + dx/len*Math.min(len,maxStep)*ease, p.y + dy/len*Math.min(len,maxStep)*ease, dt);
+    }
+
+    function physics(dt) {
+      elapsed += dt; updateHud();
+      if (countdown > 0) {
+        countdown -= dt;
+        if (countdown <= 0) { const dir = Math.random()>.5 ? 1 : -1; puck.vx = dir * (300 + Math.random()*55) * scale; puck.vy = (Math.random()-.5)*220*scale; }
+      }
+      if (mode === 'single') updateAI(dt);
+      puck.x += puck.vx*dt; puck.y += puck.vy*dt;
+      const rail = Math.max(18,23*scale), goalHalf = Math.min(H*.22, 130*scale), goalTop=H/2-goalHalf, goalBottom=H/2+goalHalf;
+      const bounce=.91, maxSpeed=1050*scale;
+      if (puck.y-puck.r < rail) { puck.y=rail+puck.r; puck.vy=Math.abs(puck.vy)*bounce; }
+      if (puck.y+puck.r > H-rail) { puck.y=H-rail-puck.r; puck.vy=-Math.abs(puck.vy)*bounce; }
+      if (puck.x-puck.r < rail) {
+        if (puck.y>goalTop && puck.y<goalBottom) { if (puck.x < -puck.r) goal(1); }
+        else { puck.x=rail+puck.r; puck.vx=Math.abs(puck.vx)*bounce; }
+      }
+      if (puck.x+puck.r > W-rail) {
+        if (puck.y>goalTop && puck.y<goalBottom) { if (puck.x > W+puck.r) goal(0); }
+        else { puck.x=W-rail-puck.r; puck.vx=-Math.abs(puck.vx)*bounce; }
+      }
+      for (const p of paddle) {
+        const dx=puck.x-p.x, dy=puck.y-p.y, dist=Math.hypot(dx,dy), min=puck.r+p.r;
+        if (dist < min && dist > .001) {
+          const nx=dx/dist, ny=dy/dist, overlap=min-dist; puck.x+=nx*overlap; puck.y+=ny*overlap;
+          const rel=(puck.vx-p.vx)*nx+(puck.vy-p.vy)*ny;
+          if (rel<0) { const impulse=-(1.52)*rel; puck.vx+=impulse*nx+p.vx*.16; puck.vy+=impulse*ny+p.vy*.16; pulse(8); }
+        }
+      }
+      const speed=Math.hypot(puck.vx,puck.vy);
+      if (speed>maxSpeed) { puck.vx=puck.vx/speed*maxSpeed; puck.vy=puck.vy/speed*maxSpeed; }
+      const drag=Math.pow(.997,dt*60); puck.vx*=drag; puck.vy*=drag;
+    }
+
+    function draw() {
+      const rail=Math.max(18,23*scale), goalHalf=Math.min(H*.22,130*scale), gt=H/2-goalHalf, gb=H/2+goalHalf;
+      const grad=ctx.createLinearGradient(0,0,W,H); grad.addColorStop(0,'#071a27'); grad.addColorStop(.5,'#0b2030'); grad.addColorStop(1,'#091521'); ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      ctx.save(); ctx.globalAlpha=.12; ctx.strokeStyle='#8bd9e8'; ctx.lineWidth=1;
+      const grid=Math.max(35,48*scale); ctx.beginPath();
+      for(let x=rail;x<W;x+=grid){ctx.moveTo(x,rail);ctx.lineTo(x,H-rail)} for(let y=rail;y<H;y+=grid){ctx.moveTo(rail,y);ctx.lineTo(W-rail,y)} ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.shadowBlur=24; ctx.shadowColor='rgba(39,233,255,.2)'; ctx.strokeStyle='rgba(184,241,250,.82)'; ctx.lineWidth=Math.max(3,4*scale); ctx.beginPath();
+      ctx.moveTo(rail,gt);ctx.lineTo(rail,rail);ctx.lineTo(W-rail,rail);ctx.lineTo(W-rail,gt);
+      ctx.moveTo(W-rail,gb);ctx.lineTo(W-rail,H-rail);ctx.lineTo(rail,H-rail);ctx.lineTo(rail,gb);ctx.stroke(); ctx.restore();
+      ctx.strokeStyle='rgba(210,244,249,.33)';ctx.lineWidth=Math.max(2,3*scale);ctx.setLineDash([11*scale,12*scale]);ctx.beginPath();ctx.moveTo(W/2,rail);ctx.lineTo(W/2,H-rail);ctx.stroke();ctx.setLineDash([]);
+      ctx.beginPath();ctx.arc(W/2,H/2,Math.min(H*.16,100*scale),0,Math.PI*2);ctx.strokeStyle='rgba(210,244,249,.28)';ctx.lineWidth=Math.max(2,3*scale);ctx.stroke();
+      drawGoal(0,gt,gb,'#27e9ff'); drawGoal(W,gt,gb,'#ff526f');
+      drawPaddle(paddle[0]); drawPaddle(paddle[1]); drawPuck();
+    }
+
+    function drawGoal(x,top,bottom,color){
+      const left=x===0; ctx.save();ctx.strokeStyle=color;ctx.shadowColor=color;ctx.shadowBlur=20;ctx.globalAlpha=.75;ctx.lineWidth=Math.max(5,7*scale);ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();
+      ctx.save();ctx.globalAlpha=.11;ctx.fillStyle=color;ctx.fillRect(left?0:W-45*scale,top,left?45*scale:45*scale,bottom-top);ctx.restore();
+    }
+    function drawPaddle(p){
+      ctx.save();ctx.translate(p.x,p.y);ctx.shadowColor=p.color;ctx.shadowBlur=30;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      const g=ctx.createRadialGradient(-p.r*.3,-p.r*.35,p.r*.1,0,0,p.r);g.addColorStop(0,'rgba(255,255,255,.78)');g.addColorStop(.28,'rgba(255,255,255,.16)');g.addColorStop(1,'rgba(0,0,0,.48)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,p.r*.77,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=Math.max(2,3*scale);ctx.beginPath();ctx.arc(0,0,p.r*.43,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+    function drawPuck(){
+      ctx.save();ctx.translate(puck.x,puck.y);ctx.shadowColor='#fff';ctx.shadowBlur=18;ctx.fillStyle='#f7fcff';ctx.beginPath();ctx.arc(0,0,puck.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#8fa4af';ctx.beginPath();ctx.arc(0,0,puck.r*.62,0,Math.PI*2);ctx.fill();ctx.fillStyle='#dbe8ec';ctx.beginPath();ctx.arc(-puck.r*.18,-puck.r*.2,puck.r*.28,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+
+    function loop(now) {
+      const dt=Math.min(.025,(now-lastTime)/1000||0); lastTime=now;
+      if (state==='playing') physics(dt);
+      else if (state==='goal') {
+        goalTimer-=dt;
+        if(goalTimer<=0){ toast.classList.remove('show'); if(Math.max(...score)>=7) finishGame(); else {resetPositions(true);state='playing';} }
+      }
+      draw(); animationId=requestAnimationFrame(loop);
+    }
+
+    function pointerPosition(e) { const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+    canvas.addEventListener('pointerdown', e => {
+      if(state!=='playing')return; e.preventDefault(); const pos=pointerPosition(e); const side=pos.x<W/2?0:1;
+      if(mode==='single'&&side===1)return;
+      if([...pointers.values()].includes(side))return;
+      pointers.set(e.pointerId,side); canvas.setPointerCapture?.(e.pointerId); movePaddle(side,pos.x,pos.y,1/60);
+    });
+    canvas.addEventListener('pointermove', e => { if(!pointers.has(e.pointerId)||state!=='playing')return;e.preventDefault();const pos=pointerPosition(e);movePaddle(pointers.get(e.pointerId),pos.x,pos.y,1/60); });
+    const release=e=>pointers.delete(e.pointerId); canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+    function renderLeaderboard(){
+      const rows=prefs.history||[], singles=rows.filter(r=>r.mode==='single'), wins=singles.filter(r=>r.win), best=wins.sort((a,b)=>(b.left-b.right)-(a.left-a.right))[0];
+      $('#statWins').textContent=wins.length;$('#statGames').textContent=singles.length;$('#statBest').textContent=best?`${best.left}:${best.right}`:'–';
+      $('#history').innerHTML=rows.length?rows.map(r=>{
+        const d=new Date(r.date), label=r.mode==='single'?(r.win?'Sieg':'Niederlage'):(r.left>r.right?'Spieler 1':'Spieler 2');
+        const sub=`${r.mode==='single'?(r.difficulty==='easy'?'Einfach':r.difficulty==='hard'?'Schwer':'Normal'):'2 Spieler'} · ${d.toLocaleDateString('de-DE',{day:'2-digit',month:'short'})} · ${formatTime(r.duration||0)}`;
+        return `<div class="history-row"><div><strong>${r.mode==='single'?'Gegen Computer':'Lokales Duell'}</strong><small>${sub}</small></div><span class="${r.mode==='single'?(r.win?'result-win':'result-loss'):'result-win'}">${label}</span><span class="history-score">${r.left}:${r.right}</span></div>`;
+      }).join(''):'<div class="history-empty">Noch kein Spiel gespeichert.<br>Ab aufs Feld!</div>';
+    }
+
+    $$('.mode-btn').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+    $$('.diff-btn').forEach(b=>b.addEventListener('click',()=>setDifficulty(b.dataset.difficulty)));
+    $('#startButton').addEventListener('click',startGame); $('#pauseButton').addEventListener('click',()=>pause(false)); $('#resumeButton').addEventListener('click',resume);
+    $('#restartPauseButton').addEventListener('click',startGame); $('#playAgainButton').addEventListener('click',startGame); $('#homeButton').addEventListener('click',backHome);
+    $$('.to-menu').forEach(b=>b.addEventListener('click',backHome));
+    $('#leaderButton').addEventListener('click',()=>{renderLeaderboard();showOnly(leaderboard)}); $('#closeLeader').addEventListener('click',()=>showOnly(home));
+    window.addEventListener('resize',resize); document.addEventListener('visibilitychange',()=>{if(document.hidden)pause(true)}); window.addEventListener('blur',()=>pause(true));
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(state==='playing'||state==='goal')pause(false);else if(state==='paused')resume();else if(!leaderboard.classList.contains('hidden'))showOnly(home)}});
+    document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+
+    setMode(mode);setDifficulty(difficulty);resize();
+  })();
+  </script>
+</body>
+</html>
